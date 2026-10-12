@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2027 MDRT 單位進度追蹤 · TC813</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&family=Spectral:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4f1ea;
+  --paper-2:#faf8f3;
+  --ink:#1b2a4a;
+  --ink-soft:#44506b;
+  --ink-faint:#8a92a5;
+  --line:#dcd6c9;
+  --line-soft:#e8e3d8;
+  --navy:#1b2a4a;
+  --teal:#2f6f6a;
+  --green:#3f8f5b;
+  --amber:#c7883a;
+  --gold:#b8922e;
+  --rose:#b24a52;
+  --font-serif:'Noto Serif TC','Spectral',Georgia,serif;
+  --font-sans:'Noto Sans TC','PingFang TC',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  line-height:1.6;
+  padding:clamp(24px,5vw,64px) clamp(16px,5vw,0px);
+}
+.wrap{max-width:1040px;margin:0 auto;}
+
+/* ── Header ── */
+.masthead{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:8px;}
+.eyebrow{
+  font-family:var(--font-sans);font-size:13px;font-weight:700;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px;
+}
+.masthead h1{
+  font-family:var(--font-serif);font-weight:900;
+  font-size:clamp(30px,5.4vw,52px);line-height:1.1;letter-spacing:.01em;
+}
+.masthead .sub{
+  display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
+  margin-top:14px;font-size:14px;color:var(--ink-soft);
+}
+.masthead .sub .unit{font-weight:700;color:var(--ink);}
+.masthead .sub .dot{color:var(--line);}
+
+/* ── Standard reference ── */
+.section-label{
+  font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--ink-faint);
+  margin:38px 0 14px;display:flex;align-items:center;gap:12px;
+}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line-soft);}
+
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.tier{
+  background:var(--paper-2);border:1px solid var(--line);border-radius:4px;
+  padding:18px 20px;position:relative;overflow:hidden;
+}
+.tier::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;}
+.tier.mdrt::before{background:var(--green);}
+.tier.cot::before{background:var(--teal);}
+.tier.tot::before{background:var(--gold);}
+.tier .t-name{font-family:var(--font-serif);font-weight:700;font-size:19px;}
+.tier .t-en{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-top:2px;}
+.tier .t-val{font-family:var(--font-serif);font-weight:900;font-size:clamp(22px,3vw,30px);margin-top:12px;letter-spacing:.01em;}
+.tier .t-unit{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+
+/* ── Summary stats ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:4px;}
+.stat{background:var(--navy);color:#f4f1ea;border-radius:4px;padding:18px 20px;}
+.stat .s-val{font-family:var(--font-serif);font-weight:900;font-size:clamp(24px,3.4vw,34px);line-height:1;}
+.stat .s-val small{font-size:.5em;font-weight:700;opacity:.7;margin-left:3px;}
+.stat .s-label{font-size:12.5px;color:#b9c0d0;margin-top:9px;letter-spacing:.04em;}
+
+/* ── Ruler ── */
+.ruler-wrap{margin:6px 0 2px;padding:0 2px;}
+.ruler{position:relative;height:16px;}
+.ruler .mk{position:absolute;top:0;transform:translateX(-50%);font-size:11px;color:var(--ink-faint);font-weight:700;letter-spacing:.04em;white-space:nowrap;}
+.ruler .mk::after{content:"";position:absolute;left:50%;top:16px;width:1px;height:6px;background:var(--line);}
+
+/* ── Member rows ── */
+.roster{border-top:1px solid var(--line);}
+.row{
+  display:grid;grid-template-columns:34px 1fr;gap:4px 16px;
+  padding:20px 2px;border-bottom:1px solid var(--line-soft);
+}
+.row .rank{
+  font-family:var(--font-serif);font-weight:700;font-size:18px;color:var(--ink-faint);
+  text-align:center;padding-top:1px;
+}
+.row .body{min-width:0;}
+.r-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;margin-bottom:11px;}
+.r-name{font-family:var(--font-serif);font-weight:700;font-size:21px;letter-spacing:.02em;}
+.badge{
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;padding:3px 9px;border-radius:999px;
+  text-transform:uppercase;line-height:1.2;
+}
+.badge.b-cot{background:rgba(47,111,106,.14);color:var(--teal);border:1px solid rgba(47,111,106,.35);}
+.badge.b-mdrt{background:rgba(63,143,91,.14);color:var(--green);border:1px solid rgba(63,143,91,.35);}
+.badge.b-chase{background:rgba(199,136,58,.14);color:var(--amber);border:1px solid rgba(199,136,58,.38);}
+.r-fyp{margin-left:auto;font-family:var(--font-serif);font-weight:900;font-size:19px;}
+.r-fyp small{font-size:11px;font-weight:700;color:var(--ink-faint);margin-right:4px;letter-spacing:.06em;}
+
+/* bar */
+.bar{position:relative;height:13px;background:#e6e1d6;border-radius:2px;overflow:hidden;}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;}
+.fill.f-cot{background:var(--teal);}
+.fill.f-mdrt{background:var(--green);}
+.fill.f-chase{background:var(--amber);}
+/* tier marker lines on bar */
+.bar .tick{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--paper);opacity:.9;}
+.bar .tick.mdrt{left:16.667%;}
+.bar .tick.cot{left:50%;}
+
+.r-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 14px;margin-top:9px;font-size:13px;color:var(--ink-soft);}
+.r-foot .pct{font-weight:700;color:var(--ink);}
+.r-foot .gap b{color:var(--ink);font-weight:700;}
+.r-foot .comp{font-size:12px;color:var(--ink-faint);}
+
+/* ── Footer ── */
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink-faint);line-height:1.8;}
+.foot .sig{color:var(--ink-soft);font-weight:700;}
+
+@media(max-width:720px){
+  .tiers{grid-template-columns:1fr;}
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .r-fyp{margin-left:0;width:100%;order:3;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">TC813 · 中銘通訊處</div>
+    <h1>2027 MDRT 單位進度追蹤</h1>
+    <div class="sub">
+      <span class="unit">以保費（FYP）計</span>
+      <span class="dot">—</span>
+      <span>MDRT 2027 年度入會標準（保費途徑）</span>
+      <span class="dot">—</span>
+      <span>資料截至 2026-10-12</span>
+    </div>
+  </header>
+
+  <!-- STANDARD -->
+  <div class="section-label">2027 入會標準 · 保費門檻</div>
+  <div class="tiers">
+    <div class="tier mdrt">
+      <div class="t-name">會員</div>
+      <div class="t-en">MDRT</div>
+      <div class="t-val">2,499,200</div>
+      <div class="t-unit">FYP／年</div>
+    </div>
+    <div class="tier cot">
+      <div class="t-name">內閣會員</div>
+      <div class="t-en">COT · 3×</div>
+      <div class="t-val">7,497,600</div>
+      <div class="t-unit">FYP／年</div>
+    </div>
+    <div class="tier tot">
+      <div class="t-name">頂尖會員</div>
+      <div class="t-en">TOT · 6×</div>
+      <div class="t-val">14,995,200</div>
+      <div class="t-unit">FYP／年</div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="section-label">單位總覽</div>
+  <div class="stats">
+    <div class="stat">
+      <div class="s-val">38,941,344</div>
+      <div class="s-label">單位總 FYP</div>
+    </div>
+    <div class="stat">
+      <div class="s-val">2<small>人</small></div>
+      <div class="s-label">已達 COT 內閣</div>
+    </div>
+    <div class="stat">
+      <div class="s-val">5<small>／8</small></div>
+      <div class="s-label">已達 MDRT 以上</div>
+    </div>
+    <div class="stat">
+      <div class="s-val">3<small>人</small></div>
+      <div class="s-label">衝刺 MDRT 中</div>
+    </div>
+  </div>
+
+  <!-- ROSTER -->
+  <div class="section-label">同仁進度 · 依 FYP 排序</div>
+
+  <div class="ruler-wrap">
+    <div class="ruler">
+      <span class="mk" style="left:16.667%;">MDRT</span>
+      <span class="mk" style="left:50%;">COT</span>
+      <span class="mk" style="left:100%;">TOT</span>
+    </div>
+  </div>
+
+  <div class="roster">
+
+    <!-- 1 陳冠辰 -->
+    <div class="row">
+      <div class="rank">1</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">陳冠辰</span>
+          <span class="badge b-cot">已達 COT</span>
+          <span class="r-fyp"><small>FYP</small>12,755,554</span>
+        </div>
+        <div class="bar"><div class="fill f-cot" style="width:85.1%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 TOT 尚差 <b>2,239,646</b></span>
+          <span class="pct">TOT 達成 85.1%</span>
+          <span class="comp">FYC 2,198,776 · 組件 24</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 蔡亦程 -->
+    <div class="row">
+      <div class="rank">2</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">蔡亦程</span>
+          <span class="badge b-cot">已達 COT</span>
+          <span class="r-fyp"><small>FYP</small>9,522,124</span>
+        </div>
+        <div class="bar"><div class="fill f-cot" style="width:63.5%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 TOT 尚差 <b>5,473,076</b></span>
+          <span class="pct">TOT 達成 63.5%</span>
+          <span class="comp">FYC 1,064,323 · 組件 38</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 汪淑玲 -->
+    <div class="row">
+      <div class="rank">3</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">汪淑玲</span>
+          <span class="badge b-mdrt">已達 MDRT</span>
+          <span class="r-fyp"><small>FYP</small>5,116,291</span>
+        </div>
+        <div class="bar"><div class="fill f-mdrt" style="width:34.1%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 COT 尚差 <b>2,381,309</b></span>
+          <span class="pct">COT 達成 68.2%</span>
+          <span class="comp">FYC 506,153 · 組件 16</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 李秉芳 -->
+    <div class="row">
+      <div class="rank">4</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">李秉芳</span>
+          <span class="badge b-mdrt">已達 MDRT</span>
+          <span class="r-fyp"><small>FYP</small>2,868,121</span>
+        </div>
+        <div class="bar"><div class="fill f-mdrt" style="width:19.1%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 COT 尚差 <b>4,629,479</b></span>
+          <span class="pct">COT 達成 38.3%</span>
+          <span class="comp">FYC 456,460 · 組件 22</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 高聖芳 -->
+    <div class="row">
+      <div class="rank">5</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">高聖芳</span>
+          <span class="badge b-mdrt">已達 MDRT</span>
+          <span class="r-fyp"><small>FYP</small>2,703,544</span>
+        </div>
+        <div class="bar"><div class="fill f-mdrt" style="width:18.0%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 COT 尚差 <b>4,794,056</b></span>
+          <span class="pct">COT 達成 36.1%</span>
+          <span class="comp">FYC 607,569 · 組件 44</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 孫桂英 -->
+    <div class="row">
+      <div class="rank">6</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">孫桂英</span>
+          <span class="badge b-chase">衝刺 MDRT</span>
+          <span class="r-fyp"><small>FYP</small>2,035,801</span>
+        </div>
+        <div class="bar"><div class="fill f-chase" style="width:13.6%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 MDRT 尚差 <b>463,399</b></span>
+          <span class="pct">MDRT 達成 81.5%</span>
+          <span class="comp">FYC 502,463 · 組件 23</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 林君溥 -->
+    <div class="row">
+      <div class="rank">7</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">林君溥</span>
+          <span class="badge b-chase">衝刺 MDRT</span>
+          <span class="r-fyp"><small>FYP</small>2,009,904</span>
+        </div>
+        <div class="bar"><div class="fill f-chase" style="width:13.4%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 MDRT 尚差 <b>489,296</b></span>
+          <span class="pct">MDRT 達成 80.4%</span>
+          <span class="comp">FYC 373,989 · 組件 15</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8 張嘉芸 -->
+    <div class="row">
+      <div class="rank">8</div>
+      <div class="body">
+        <div class="r-head">
+          <span class="r-name">張嘉芸</span>
+          <span class="badge b-chase">衝刺 MDRT</span>
+          <span class="r-fyp"><small>FYP</small>1,930,005</span>
+        </div>
+        <div class="bar"><div class="fill f-chase" style="width:12.9%"></div><div class="tick mdrt"></div><div class="tick cot"></div></div>
+        <div class="r-foot">
+          <span class="gap">距 MDRT 尚差 <b>569,195</b></span>
+          <span class="pct">MDRT 達成 77.2%</span>
+          <span class="comp">FYC 343,188 · 組件 6</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /roster -->
+
+  <div class="foot">
+    進度條以 TOT（14,995,200）為滿格；刻度線為 MDRT（16.7%）與 COT（50%）。達成率＝目前 FYP ÷ 下一關門檻。<br>
+    標準來源：MDRT 2027 年度入會標準（保費途徑）。資料為單位 MDRT/IDA 合計 FYP 快照。<br>
+    <span class="sig">📥 2026-10-12 由 Keri 建檔</span>
+  </div>
+
+</div>
+</body>
+</html>
